@@ -16,6 +16,7 @@ RTC_DS3231 rtc; //Creating RTC object
 
 unsigned long pTime; //Time since program started
 unsigned long tTime = 0; //LCD display message toggle time
+unsigned long lastInterrupt;
 bool showLogs = false;
 bool Toggle = false; //Toggle for alert display every five seconds.
 bool currentAlertMD = false; //Variable for if dry soil moisture alert is currently taking place
@@ -25,13 +26,13 @@ bool currentAlertHH = false; //Variable for if high humidity alert is currently 
 bool currentAlertTL = false; //Variable for if low temperature alert is currently taking place
 bool currentAlertTH = false; //Variable for if high temperature alert is currently taking place
 bool timeRegistered = false;
+bool buttonPressed = false;
 
 int counter = 1; 
 int valueCount1 = 0;
 int valueCount2 = 0;
 int currentStringIndex = 0; 
 int currentTimeIndex = 0;  
-
 
 const int pinDHT11 = 5; // Temperature and Humidity Sensor
 const int pinSEN0114 = 17; // Moisture Sensor
@@ -55,8 +56,11 @@ DateTime timeValues2[MAX_VALUES];
 
 
 void alertLog() { //Show logs to user
-    int btnState = digitalRead(pinButtonE);
-    showLogs = !showLogs;
+    if(pTime - lastInterrupt > 1000) {// we set a 10ms no-interrupts window
+      int btnState = digitalRead(pinButtonE);
+      showLogs = !showLogs;
+      lastInterrupt = pTime;
+    }
 
 	}
 void combineTimeValuesToString() { //Combine stored time values and convert to string
@@ -379,7 +383,7 @@ void displayData(){
     }
     
   }
-  if (humidity < maximumRHumidity){
+  if (humidity < maximumRHumidity && temperature < maximumRTemperature){
     digitalWrite(PIN_RELAY_3, LOW);
     if (currentAlertHH == true){
       currentAlertHH = false;
@@ -391,7 +395,7 @@ void displayData(){
     }
    
   }
-  if (temperature < maximumRTemperature){
+  if (temperature < maximumRTemperature && humidity < maximumRHumidity){
     digitalWrite(PIN_RELAY_3, LOW);
     if (currentAlertTL == true){
       currentAlertTL = false;
