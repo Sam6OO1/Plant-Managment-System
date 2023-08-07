@@ -11,6 +11,7 @@
 #define PIN_RELAY_3  11 //Define ardunio pin for relay 3 (Relay three is for a fan)
 #define PIN_RELAY_4  12 //Define ardunio pin for relay 4 (Relay four is for a heater)
 LiquidCrystal_I2C lcd(0x27, 16, 2); //Creating LCD object with i2c address, number of columns and rows.
+
 RTC_DS3231 rtc; //Creating RTC object
 // Wiring: Connect SDA to a4, Connect SDL to a5
 
@@ -34,36 +35,36 @@ int valueCount2 = 0;
 int currentStringIndex = 0; 
 int currentTimeIndex = 0;  
 
-const int pinDHT11 = 5; // Temperature and Humidity Sensor
-const int pinSEN0114 = 17; // Moisture Sensor
-const int pinButtonR = 3; // Right Menu Button
-const int pinButtonL = 4; // Left Menu Button
-const int pinButtonE = 2; // Enable Menu
+const int PIN_DHT_11 = 5; // Temperature and Humidity Sensor
+const int PIN_SEN_0114 = 17; // Moisture Sensor
+const int PIN_BUTTON_R = 3; // Right Menu Button
+const int PIN_BUTTON_L = 4; // Left Menu Button
+const int PIN_BUTTON_E = 2; // Enable Menu
 const int MAX_VALUES = 10; // Maximum number of time values to store
 
 // Range of temperature and humidity that is acceptable and doesn't require any relay activation change to prefrences 
-const int minimumRTemperature = 18; // Minimum Recommended Temperature
-const int maximumRTemperature = 24; // Maximum Recommended Temperature
-const int minimumRHumidity = 75; // Minimum Recommended Humidity
-const int maximumRHumidity = 85; // Maximum Recommnded Humidity
+const int MINIMUM_R_TEMPERATURE = 18; // Minimum Recommended Temperature
+const int MAXIMUM_R_TEMPERATURE = 24; // Maximum Recommended Temperature
+const int MINIMUM_R_HUMIDITY = 75; // Minimum Recommended Humidity
+const int MAXIMUM_R_HUMIDITY = 85; // Maximum Recommnded Humidity
 
 char strings[MAX_STRINGS][MAX_STRING_LENGTH]; //array to store alert strings
 char timeStrings[MAX_STRINGS][MAX_STRING_LENGTH]; //array to store alert times
 
-SimpleDHT11 dht11(pinDHT11);
+SimpleDHT11 dht11(PIN_DHT_11);
 DateTime timeValues1[MAX_VALUES];
 DateTime timeValues2[MAX_VALUES];
 
 
-void alertLog() { //Show logs to user
+void AlertLog() { //Show logs to user
     if(pTime - lastInterrupt > 1000) {// we set a 10ms no-interrupts window
-      int btnState = digitalRead(pinButtonE);
+      int btnState = digitalRead(PIN_BUTTON_E);
       showLogs = !showLogs;
       lastInterrupt = pTime;
     }
 
 	}
-void combineTimeValuesToString() { //Combine stored time values and convert to string
+void CombineTimeValuesToString() { //Combine stored time values and convert to string
   if (currentTimeIndex < MAX_STRINGS) {
     char tempTimeString[MAX_STRING_LENGTH];
 
@@ -87,7 +88,7 @@ void combineTimeValuesToString() { //Combine stored time values and convert to s
   }
   }
 }
-void addString(const char* newString) {// Add strings to character array
+void AddString(const char* newString) {// Add strings to character array
   if (currentStringIndex < MAX_STRINGS) {
     strncpy(strings[currentStringIndex], newString, MAX_STRING_LENGTH);
     currentStringIndex++;
@@ -119,7 +120,7 @@ void setup() {
   }
 
   Serial.begin(9600);
-  attachInterrupt(digitalPinToInterrupt(pinButtonE),alertLog,FALLING); //Attach Interrupt to push button
+  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON_E),AlertLog,FALLING); //Attach Interrupt to push button
   lcd.init(); // Initialize LCD
   lcd.backlight(); // Turns on backlight
   lcd.setCursor(1, 0); // Sets where the text should be displayed, The first parameter shows column and second parameter shows row
@@ -127,16 +128,16 @@ void setup() {
   pinMode(PIN_RELAY_2, OUTPUT);
   pinMode(PIN_RELAY_3, OUTPUT);
   pinMode(PIN_RELAY_4, OUTPUT);
-  pinMode(pinButtonE, INPUT_PULLUP); //Sets button pins as input pullups
-  pinMode(pinButtonL, INPUT_PULLUP);
-  pinMode(pinButtonR, INPUT_PULLUP);
-  addString("Test String"); //Add test string to logs
+  pinMode(PIN_BUTTON_E, INPUT_PULLUP); //Sets button pins as input pullups
+  pinMode(PIN_BUTTON_L, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_R, INPUT_PULLUP);
+  AddString("Test String"); //Add test string to logs
  
 
 
 
 }
-void storeTimeValue(DateTime time, int arrayIndex) { //Store current time value into an array, two arrays to allow for begin and end time values
+void StoreTimeValue(DateTime time, int arrayIndex) { //Store current time value into an array, two arrays to allow for begin and end time values
   if (arrayIndex == 1) {
     if (valueCount1 > 0) {
       // Shift the existing values in array to make space for the new value
@@ -172,7 +173,7 @@ void loop() {
   pTime = millis();
 
   if (showLogs == true) { 
-    if (digitalRead(pinButtonR) == LOW){  
+    if (digitalRead(PIN_BUTTON_R) == LOW){  
       counter --;
        if (counter <= 0){ //Make sure counter is never equal to 0 the test string
         counter = 1;
@@ -182,7 +183,7 @@ void loop() {
       }
   
     }
-    if (digitalRead(pinButtonL) == LOW){
+    if (digitalRead(PIN_BUTTON_L) == LOW){
       counter ++;
       if (counter <= 0){ //Make sure counter is never equal to 0 the test string
         counter = 1;
@@ -207,17 +208,17 @@ void loop() {
 
   if (showLogs == false){
     lcd.clear();
-    displayData(); 
+    DisplayData(); 
   }
   
   Serial.println(); 
 }
 
-void displayData(){
+void DisplayData(){
   DateTime now = rtc.now();
 
    // read without sample
-  int soilMositure = analogRead(pinSEN0114);
+  int soilMositure = analogRead(PIN_SEN_0114);
   byte temperature = 0;
   byte humidity = 0;
   int err = SimpleDHTErrSuccess;
@@ -252,7 +253,7 @@ void displayData(){
     currentAlertMD = true;
     if (timeRegistered == false){ //Check If time hasn't already been registered (If removed will record the exact time value of state change) 
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
   }
@@ -263,7 +264,7 @@ void displayData(){
     currentAlertMW = true;
     if (timeRegistered == false){
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
 
@@ -276,17 +277,17 @@ void displayData(){
     if (currentAlertMD == true){
       currentAlertMD = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("Soil Dry"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("Soil Dry"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
     if (currentAlertMW == true){
       currentAlertMW = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("Soil Wet"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("Soil Wet"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
 
@@ -298,13 +299,13 @@ void displayData(){
 
   }
 
-  if (minimumRTemperature > temperature) { //Check if temperature is below minimumRTemperature if so print to LCD and serial console
+  if (MINIMUM_R_TEMPERATURE > temperature) { //Check if temperature is below MINIMUM_R_TEMPERATURE if so print to LCD and serial console
     Serial.print(" Below minimum set temperature");
     digitalWrite(PIN_RELAY_4, HIGH);
     currentAlertTL = true;
     if (timeRegistered == false){
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
   
@@ -316,13 +317,13 @@ void displayData(){
       Toggle = false;
     }
   }
-  if (maximumRTemperature < temperature) { //Check if temperature is over maximumRTemperature if so print to LCD and serial console
+  if (MAXIMUM_R_TEMPERATURE < temperature) { //Check if temperature is over MAXIMUM_R_TEMPERATURE if so print to LCD and serial console
     Serial.print(" Over maximum set temperature");
     digitalWrite(PIN_RELAY_3, HIGH);
     currentAlertTH = true;
     if (timeRegistered == false){
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
 
@@ -335,13 +336,13 @@ void displayData(){
       Toggle = false;
     }
   }
-  if (minimumRHumidity > humidity) { //Check if humidity is below minimumRHumidity if so print to LCD and serial console
+  if (MINIMUM_R_HUMIDITY > humidity) { //Check if humidity is below MINIMUM_R_HUMIDITY if so print to LCD and serial console
     Serial.print(" Below minimum set humidity");
     digitalWrite(PIN_RELAY_1, HIGH);
     currentAlertHL = true;
     if (timeRegistered == false){
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
 
@@ -353,13 +354,13 @@ void displayData(){
       Toggle = false;
     }
   }
-  if (maximumRHumidity < humidity) { //Check if humidity is over maximumRHumidity if so print to LCD and serial console
+  if (MAXIMUM_R_HUMIDITY < humidity) { //Check if humidity is over MAXIMUM_R_HUMIDITY if so print to LCD and serial console
     Serial.print(" Over maximum set humidity");
     digitalWrite(PIN_RELAY_3, HIGH);
     currentAlertHH = true;
     if (timeRegistered == false){
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 1);
+      StoreTimeValue(now, 1);
       timeRegistered = true;
     }
 
@@ -371,49 +372,49 @@ void displayData(){
       Toggle = false;
     }
   }
-  if (minimumRHumidity < humidity){
+  if (MINIMUM_R_HUMIDITY < humidity){
     digitalWrite(PIN_RELAY_1, LOW);
     if (currentAlertHL == true){
       currentAlertHL = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("Low Humidity"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("Low Humidity"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
     
   }
-  if (humidity < maximumRHumidity && temperature < maximumRTemperature){
+  if (humidity < MAXIMUM_R_HUMIDITY && temperature < MAXIMUM_R_TEMPERATURE){
     digitalWrite(PIN_RELAY_3, LOW);
     if (currentAlertHH == true){
       currentAlertHH = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("High Humidity"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("High Humidity"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
    
   }
-  if (temperature < maximumRTemperature && humidity < maximumRHumidity){
+  if (temperature < MAXIMUM_R_TEMPERATURE && humidity < MAXIMUM_R_HUMIDITY){
     digitalWrite(PIN_RELAY_3, LOW);
     if (currentAlertTL == true){
       currentAlertTL = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("Low Temp"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("Low Temp"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
   }
-  if (minimumRTemperature < temperature){
+  if (MINIMUM_R_TEMPERATURE < temperature){
     digitalWrite(PIN_RELAY_4, LOW);
     if (currentAlertTH == true){
       currentAlertTH = false;
       now = rtc.now(); // Get the updated time 
-      storeTimeValue(now, 2);
-      addString("High Temp"); 
-      combineTimeValuesToString();
+      StoreTimeValue(now, 2);
+      AddString("High Temp"); 
+      CombineTimeValuesToString();
       timeRegistered = false;
     }
   }
